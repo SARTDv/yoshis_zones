@@ -1,0 +1,15 @@
+.board {
+    display: grid;
+    grid-template-columns: repeat(8, 55px); /* Ajusta el tamaño de la casilla */
+    grid-template-rows: repeat(8, 55px);    /* Ajusta el tamaño de la casilla */
+    width: calc(8 * 55px);
+    height: calc(8 * 55px);
+    border: 8px solid #90A4AE; /* Marco del tablero */
+    background-color: #DDE2E7; /* Fondo general, si las casillas no lo cubren */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 8px; /* Bordes redondeados para el tablero */
+    padding: 5px; /* Pequeño padding para que el borde no toque las casillas */
+    padding-right: 12px;
+    padding-bottom: 12px;
+    gap: 1px; /* Espacio entre casillas si no usas bordes en .square */
+  }

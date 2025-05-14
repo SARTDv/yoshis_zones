@@ -1,0 +1,43 @@
+.scoreboard-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    max-width: 500px; /* Ajustar según sea necesario */
+    padding: 10px 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  
+  .score-item {
+    font-size: 1.1em;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
+    color: #555;
+  }
+  
+  .score-item.active-turn {
+    transform: scale(1.05);
+    font-weight: bold;
+  }
+  
+  .score-item:first-child.active-turn {
+    background-color: rgba(46, 204, 113, 0.15); /* Verde claro translúcido */
+    color: #1a8a53;
+  }
+  
+  .score-item:last-child.active-turn {
+    background-color: rgba(231, 76, 60, 0.15); /* Rojo claro translúcido */
+    color: #c03420;
+  }
+  
+  
+  .knight-icon {
+    font-size: 1.3em;
+    margin-right: 8px;
+    vertical-align: middle;
+  }

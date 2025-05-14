@@ -1,0 +1,50 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Alinea al inicio para ver el scoreboard arriba */
+    min-height: 100vh;
+    padding-top: 20px;
+  }
+  
+  .app-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .turn-indicator {
+    font-size: 1.2em;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .winner-message {
+    flex-direction: column;
+    display: flex;
+    padding: 20px;
+    background-color: #e0ffe0;
+    border: 1px solid #008000;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.5em;
+  }
+  .winner-message button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+  }
+  .winner-message button:hover {
+      background-color: #45a049;
+  }

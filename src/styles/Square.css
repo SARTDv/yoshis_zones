@@ -1,0 +1,75 @@
+.square {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    /* border: 1px solid #B0BEC5; -- Si se usa gap en .board, esto puede ser innecesario */
+    transition: background-color 0.3s ease-out, box-shadow 0.2s ease-in-out;
+    position: relative;
+    cursor: pointer;
+    border-radius: 4px; /* Bordes redondeados para cada casilla */
+  }
+  
+  .square.special-zone-default::before {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px; right: 2px; bottom: 2px;
+    border: 3px dashed rgba(255, 215, 0, 0.8); /* Dorado pálido translúcido */
+    pointer-events: none;
+    border-radius: 3px;
+    animation: pulseSpecialBorder 3s infinite ease-in-out;
+  }
+  
+  @keyframes pulseSpecialBorder {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  
+  /* .square.possible-move se maneja con boxShadow en el JS por simplicidad */
+  /* Animación de aparición del resaltado si se quisiera con ::after */
+  /*
+  .square.possible-move::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    background-color: var(--highlight-color, rgba(135, 206, 235, 0.5));
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: expandAndFadeInSquareHighlight 0.3s ease-out forwards;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  @keyframes expandAndFadeInSquareHighlight {
+    from { width: 0; height: 0; opacity: 0; }
+    to { width: 70%; height: 70%; opacity: 1; }
+  }
+  */
+  
+  .square.captured {
+    /* La opacidad puede ser manejada en el style inline para el color */
+    /* Para un efecto de "bloqueado" */
+    opacity: 0.85;
+  }
+  .square.captured.special-zone-default::before {
+      display: none; /* Ocultar el borde punteado si ya está capturada */
+  }
+  
+  .square.zone-conquered-green,
+  .square.zone-conquered-red {
+      animation: conqueredZonePulse 1.5s infinite ease-in-out;
+  }
+  .square.zone-conquered-green {
+      box-shadow: inset 0 0 10px 2px #2ECC71, 0 0 5px #2ECC71;
+  }
+  .square.zone-conquered-red {
+       box-shadow: inset 0 0 10px 2px #E74C3C, 0 0 5px #E74C3C;
+  }
+  
+  @keyframes conqueredZonePulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+  }
