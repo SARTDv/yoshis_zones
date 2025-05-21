@@ -10,11 +10,14 @@ import {
   ZONES_DEFINITION_FOR_MAJORITY
 } from '../constants';
 import { getPossibleKnightMoves } from '../gameLogic/knightMoves';
+import { getBestMove } from '../gameLogic/minimax';
 
 const createInitialBoard = () => Array(8).fill(null).map(() => Array(8).fill(null));
 
 function App() {
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameMode, setGameMode] = useState('friend'); // 'friend' o 'ai'
+  const [difficulty, setDifficulty] = useState(null); // 'beginner', 'amateur', 'expert'
   const [knights, setKnights] = useState(JSON.parse(JSON.stringify(INITIAL_KNIGHT_POSITIONS))); // Deep copy
   const [currentPlayer, setCurrentPlayer] = useState(PLAYER_COLORS.GREEN);
   const [selectedKnightPos, setSelectedKnightPos] = useState(null); // { r, c }
@@ -26,6 +29,7 @@ function App() {
     [PLAYER_COLORS.RED]: new Set()
   });
   const [winner, setWinner] = useState(null);
+  const [isAIThinking, setIsAIThinking] = useState(false);
 
   const resetGame = () => {
     setKnights(JSON.parse(JSON.stringify(INITIAL_KNIGHT_POSITIONS)));
@@ -39,7 +43,9 @@ function App() {
     setGameStarted(true);
   };
 
-  const handleStartGame = (mode, difficulty) => {
+  const handleStartGame = (mode, aiDifficulty) => {
+    setGameMode(mode);
+    setDifficulty(aiDifficulty);
     resetGame();
   };
 
@@ -56,9 +62,50 @@ function App() {
     }
   }, [capturedSpecialSquares, scores]);
 
+  // Efecto para manejar el turno de la IA
+  useEffect(() => {
+    if (gameStarted && gameMode === 'ai' && currentPlayer === PLAYER_COLORS.GREEN && !winner) {
+      // La IA juega con el Yoshi verde
+      setIsAIThinking(true);
+      
+      // Pequeño retraso para dar sensación de "pensamiento"
+      const aiMoveTimeout = setTimeout(() => {
+        const bestMove = getBestMove(knights, currentPlayer, capturedSpecialSquares, difficulty);
+        
+        if (bestMove) {
+          // Mover el caballo de la IA
+          const newKnights = { ...knights };
+          newKnights[currentPlayer] = { r: bestMove.r, c: bestMove.c };
+          setKnights(newKnights);
+          
+          // Capturar casilla especial si aplica
+          const squareKey = `${bestMove.r}-${bestMove.c}`;
+          let newCaptured = { ...capturedSpecialSquares };
+          let newScores = { ...scores };
+          
+          if (SPECIAL_ZONE_SQUARES.has(squareKey) && !newCaptured[squareKey]) {
+            newCaptured[squareKey] = currentPlayer;
+            newScores[currentPlayer]++;
+            setCapturedSpecialSquares(newCaptured);
+            setScores(newScores);
+            checkZoneConquest(newCaptured);
+          }
+          
+          // Cambiar turno al jugador humano
+          setCurrentPlayer(PLAYER_COLORS.RED);
+          setIsAIThinking(false);
+        }
+      }, 700); // Retraso de 700ms para simular "pensamiento" de la IA
+      
+      return () => clearTimeout(aiMoveTimeout);
+    }
+  }, [gameStarted, gameMode, currentPlayer, knights, capturedSpecialSquares, difficulty, winner]);
 
   const handleSquareClick = (r, c) => {
-    if (winner) return;
+    if (winner || isAIThinking) return;
+    
+    // En modo IA, el jugador humano solo controla el Yoshi rojo
+    if (gameMode === 'ai' && currentPlayer === PLAYER_COLORS.GREEN) return;
 
     const clickedKnightColor = Object.keys(knights).find(
       color => knights[color].r === r && knights[color].c === c
@@ -156,11 +203,17 @@ function App() {
             [PLAYER_COLORS.GREEN]: conqueredZones[PLAYER_COLORS.GREEN].size,
             [PLAYER_COLORS.RED]: conqueredZones[PLAYER_COLORS.RED].size
         }}
+        gameMode={gameMode}
       />
       {winner && (
         <div className="winner-message">
-          {winner === 'TIE' ? '¡Es un Empate!' : `¡Ganador: ${winner}!`}
+          {winner === 'TIE' ? '¡Es un Empate!' : `¡Ganador: ${winner === PLAYER_COLORS.GREEN ? 'Verde' : 'Rojo'}!`}
           <button onClick={resetGame}>Jugar de Nuevo</button>
+        </div>
+      )}
+      {isAIThinking && (
+        <div className="ai-thinking">
+          La IA está pensando...
         </div>
       )}
       <Board
@@ -172,7 +225,13 @@ function App() {
         conqueredZones={conqueredZones}
       />
        <div className="turn-indicator">
-        Turno de: <span style={{ color: currentPlayer === PLAYER_COLORS.GREEN ? PLAYER_COLORS.GREEN : PLAYER_COLORS.RED, fontWeight: 'bold' }}>{currentPlayer}</span>
+        Turno de: <span style={{ 
+          color: currentPlayer === PLAYER_COLORS.GREEN ? PLAYER_COLORS.GREEN : PLAYER_COLORS.RED, 
+          fontWeight: 'bold' 
+        }}>
+          {currentPlayer === PLAYER_COLORS.GREEN ? 'Verde' : 'Rojo'}
+          {gameMode === 'ai' && ` (${currentPlayer === PLAYER_COLORS.GREEN ? 'IA' : 'Humano'})`}
+        </span>
       </div>
     </div>
   );
