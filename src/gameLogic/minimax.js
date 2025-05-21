@@ -1,8 +1,8 @@
-import { PLAYER_COLORS, ZONES_DEFINITION_FOR_MAJORITY } from '../constants';
+import { PLAYER_COLORS, SPECIAL_ZONE_SQUARES, ZONES_DEFINITION_FOR_MAJORITY } from '../constants';
 import { getPossibleKnightMoves } from './knightMoves';
 
-// Función heurística según definida en el proyecto:
-// h(n) = 100⋅(ZV−ZR) + 10⋅(AV−AR) + (PV−PR)
+// Función heurística mejorada que añade un componente aleatorio pequeño para romper empates
+// y un factor de proximidad a casillas especiales no capturadas
 const evaluateBoard = (capturedSquares, knights) => {
   const greenPlayer = PLAYER_COLORS.GREEN;
   const redPlayer = PLAYER_COLORS.RED;
@@ -35,10 +35,36 @@ const evaluateBoard = (capturedSquares, knights) => {
   const PV = Object.values(capturedSquares).filter(color => color === greenPlayer).length;
   const PR = Object.values(capturedSquares).filter(color => color === redPlayer).length;
 
-  // Función de evaluación
-  const utility = 100 * (ZV - ZR) + 10 * (AV - AR) + (PV - PR);
+  // Calcular factor de proximidad a casillas especiales no capturadas
+  const greenKnight = knights[greenPlayer];
+  const redKnight = knights[redPlayer];
+  
+  // Buscar casillas especiales no capturadas y calcular la proximidad
+  let greenProximity = 0;
+  let redProximity = 0;
+  
+  SPECIAL_ZONE_SQUARES.forEach(sqKey => {
+    if (!capturedSquares[sqKey]) {
+      // Parsear las coordenadas de la casilla
+      const [r, c] = sqKey.split('-').map(Number);
+      
+      // Distancia de Manhattan (aproximación de la distancia del caballo)
+      const greenDist = Math.abs(greenKnight.r - r) + Math.abs(greenKnight.c - c);
+      const redDist = Math.abs(redKnight.r - r) + Math.abs(redKnight.c - c);
+      
+      // Invertir para que menos distancia sea mejor (más valor)
+      greenProximity += 10 / (greenDist + 1);
+      redProximity += 10 / (redDist + 1);
+    }
+  });
 
-  return utility;
+  // Función de evaluación con componente de proximidad
+  const utility = 100 * (ZV - ZR) + 10 * (AV - AR) + (PV - PR) + (greenProximity - redProximity);
+  
+  // Añadir un pequeño ruido aleatorio para romper empates (entre -0.1 y 0.1)
+  const noise = Math.random() * 0.2 - 0.1;
+  
+  return utility + noise;
 };
 
 // Genera todos los posibles movimientos para un jugador
@@ -54,7 +80,13 @@ const generateMoves = (knights, currentPlayer, capturedSquares) => {
   return possibleMoves;
 };
 
-// Minimax con poda alpha-beta
+// Verificar si un movimiento captura una casilla especial
+const moveCapturesSpecial = (move, capturedSquares) => {
+  const moveKey = `${move.r}-${move.c}`;
+  return SPECIAL_ZONE_SQUARES.has(moveKey) && !capturedSquares[moveKey];
+};
+
+// Minimax con poda alpha-beta y prioridad para capturas
 export const minimaxAlphaBeta = (knights, currentPlayer, capturedSquares, depth, alpha, beta, isMaximizing) => {
   // Caso base: si llegamos a la profundidad máxima o no hay más movimientos
   if (depth === 0) {
@@ -74,6 +106,13 @@ export const minimaxAlphaBeta = (knights, currentPlayer, capturedSquares, depth,
     };
   }
 
+  // Ordenar movimientos: priorizar aquellos que capturan casillas especiales
+  possibleMoves.sort((a, b) => {
+    const aCaptures = moveCapturesSpecial(a, capturedSquares);
+    const bCaptures = moveCapturesSpecial(b, capturedSquares);
+    return bCaptures - aCaptures; // Para poner primero los que capturan
+  });
+
   let bestMove = null;
   
   if (isMaximizing) { // Nodo MAX (Yoshi verde)
@@ -89,10 +128,8 @@ export const minimaxAlphaBeta = (knights, currentPlayer, capturedSquares, depth,
       let newCapturedSquares = { ...capturedSquares };
       
       // Capturar la casilla si es una zona especial
-      for (const zone of ZONES_DEFINITION_FOR_MAJORITY) {
-        if (zone.includes(moveKey) && !newCapturedSquares[moveKey]) {
-          newCapturedSquares = { ...newCapturedSquares, [moveKey]: currentPlayer };
-        }
+      if (SPECIAL_ZONE_SQUARES.has(moveKey) && !newCapturedSquares[moveKey]) {
+        newCapturedSquares = { ...newCapturedSquares, [moveKey]: currentPlayer };
       }
       
       // Cambiar el turno para el siguiente nivel
@@ -142,10 +179,8 @@ export const minimaxAlphaBeta = (knights, currentPlayer, capturedSquares, depth,
       let newCapturedSquares = { ...capturedSquares };
       
       // Capturar la casilla si es una zona especial
-      for (const zone of ZONES_DEFINITION_FOR_MAJORITY) {
-        if (zone.includes(moveKey) && !newCapturedSquares[moveKey]) {
-          newCapturedSquares = { ...newCapturedSquares, [moveKey]: currentPlayer };
-        }
+      if (SPECIAL_ZONE_SQUARES.has(moveKey) && !newCapturedSquares[moveKey]) {
+        newCapturedSquares = { ...newCapturedSquares, [moveKey]: currentPlayer };
       }
       
       // Cambiar el turno para el siguiente nivel
@@ -202,7 +237,18 @@ export const getBestMove = (knights, currentPlayer, capturedSquares, difficulty)
       depth = 2;
   }
   
-  // Ejecutar minimax con la profundidad adecuada
+  // Verificar directamente si hay movimientos que capturen casillas especiales
+  const possibleMoves = generateMoves(knights, currentPlayer, capturedSquares);
+  const specialCaptureMoves = possibleMoves.filter(move => 
+    moveCapturesSpecial(move, capturedSquares)
+  );
+  
+  // Si hay movimientos que capturan casillas especiales, elegir uno de ellos directamente
+  if (specialCaptureMoves.length > 0) {
+    return specialCaptureMoves[0]; // Tomar el primero disponible
+  }
+  
+  // Si no hay capturas inmediatas, usar minimax
   const result = minimaxAlphaBeta(
     knights,
     currentPlayer,
