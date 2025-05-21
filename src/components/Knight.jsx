@@ -6,7 +6,6 @@ function Knight({ color, isSelected }) {
   let knightClass = "knight";
   if (isSelected) knightClass += " selected";
 
-  // Usando rutas relativas desde public/images
   const yoshiImage = color === PLAYER_COLORS.GREEN 
     ? "/images/green-yoshi.png" 
     : "/images/red-yoshi.png";
