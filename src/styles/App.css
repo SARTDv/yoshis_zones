@@ -5,7 +5,7 @@ body {
     margin: 0;
     display: flex;
     justify-content: center;
-    align-items: center; /* Alinea al inicio para ver el scoreboard arriba */
+    align-items: center;
     min-height: 100vh;
     padding-top: 20px;
   }
@@ -15,6 +15,38 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .header-controls {
+    position: absolute;
+    top: -10px;
+    right: 0;
+    z-index: 100;
+  }
+
+  .settings-button {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .settings-button:hover {
+    background-color: #545b62;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+
+  .settings-button:active {
+    transform: translateY(0);
   }
   
   .turn-indicator {
@@ -35,16 +67,34 @@ body {
     text-align: center;
     font-size: 1.5em;
   }
+
   .winner-message button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 1em;
-      cursor: pointer;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 1em;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
   }
+
   .winner-message button:hover {
-      background-color: #45a049;
+    background-color: #45a049;
+  }
+
+  .ai-thinking {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid #ffeaa7;
+    font-weight: 500;
+    animation: thinkingPulse 1.5s infinite ease-in-out;
+  }
+
+  @keyframes thinkingPulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
   }

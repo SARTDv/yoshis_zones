@@ -16,6 +16,7 @@ const createInitialBoard = () => Array(8).fill(null).map(() => Array(8).fill(nul
 
 function App() {
   const [gameStarted, setGameStarted] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [gameMode, setGameMode] = useState('friend'); // 'friend' o 'ai'
   const [difficulty, setDifficulty] = useState(null); // 'beginner', 'amateur', 'expert'
   const [knights, setKnights] = useState(JSON.parse(JSON.stringify(INITIAL_KNIGHT_POSITIONS))); // Deep copy
@@ -41,12 +42,21 @@ function App() {
     setConqueredZones({ [PLAYER_COLORS.GREEN]: new Set(), [PLAYER_COLORS.RED]: new Set() });
     setWinner(null);
     setGameStarted(true);
+    setShowModal(false);
   };
 
   const handleStartGame = (mode, aiDifficulty) => {
     setGameMode(mode);
     setDifficulty(aiDifficulty);
     resetGame();
+  };
+
+  const handleShowModal = () => {
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
   };
 
   useEffect(() => {
@@ -189,13 +199,18 @@ function App() {
     }
   };
 
-
   if (!gameStarted) {
     return <Modal onStartGame={handleStartGame} />;
   }
 
   return (
     <div className="app-container">
+      <div className="header-controls">
+        <button className="settings-button" onClick={handleShowModal}>
+          ⚙️ Configuración
+        </button>
+      </div>
+      
       <Scoreboard
         scores={scores}
         currentPlayer={currentPlayer}
@@ -205,17 +220,20 @@ function App() {
         }}
         gameMode={gameMode}
       />
+      
       {winner && (
         <div className="winner-message">
           {winner === 'TIE' ? '¡Es un Empate!' : `¡Ganador: ${winner === PLAYER_COLORS.GREEN ? 'Verde' : 'Rojo'}!`}
           <button onClick={resetGame}>Jugar de Nuevo</button>
         </div>
       )}
+      
       {isAIThinking && (
         <div className="ai-thinking">
           La IA está pensando...
         </div>
       )}
+      
       <Board
         knights={knights}
         selectedKnightPos={selectedKnightPos}
@@ -224,7 +242,8 @@ function App() {
         capturedSpecialSquares={capturedSpecialSquares}
         conqueredZones={conqueredZones}
       />
-       <div className="turn-indicator">
+      
+      <div className="turn-indicator">
         Turno de: <span style={{ 
           color: currentPlayer === PLAYER_COLORS.GREEN ? PLAYER_COLORS.GREEN : PLAYER_COLORS.RED, 
           fontWeight: 'bold' 
@@ -233,6 +252,14 @@ function App() {
           {gameMode === 'ai' && ` (${currentPlayer === PLAYER_COLORS.GREEN ? 'IA' : 'Humano'})`}
         </span>
       </div>
+
+      {showModal && (
+        <Modal 
+          onStartGame={handleStartGame} 
+          onClose={handleCloseModal}
+          isInGame={true}
+        />
+      )}
     </div>
   );
 }
