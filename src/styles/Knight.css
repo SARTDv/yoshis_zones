@@ -1,28 +1,31 @@
 .knight {
-    font-size: 32px; /* Ajustar según tamaño de casilla */
-    cursor: pointer;
-    transition: transform 0.2s ease-in-out, filter 0.2s ease-in-out;
-    user-select: none; /* Evitar selección de texto del ícono */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-  }
-  
-  .knight.selected {
-    animation: pulseKnight 0.8s infinite ease-in-out;
-    transform: scale(1.1); /* Un poco más grande al seleccionar */
-  }
-  
-  @keyframes pulseKnight {
-    0%, 100% {
-      filter: drop-shadow(0 0 2px currentColor);
-      transform: scale(1.1);
-    }
-    50% {
-      filter: drop-shadow(0 0 7px currentColor); /* Resplandor más intenso */
-      transform: scale(1.15);
-    }
-  }
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.knight.selected {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 5px rgba(255, 255, 0, 0.7));
+  z-index: 10; /* Asegura que el Yoshi seleccionado esté por encima de otros elementos */
+}
+
+.yoshi-image {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  transition: all 0.2s ease;
+}
+
+.selected .yoshi-image {
+  transform: scale(1.1);
+}
+
+/* Efecto de hover opcional */
+.knight:hover .yoshi-image {
+  transform: scale(1.05);
+}
