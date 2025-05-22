@@ -5,7 +5,6 @@ import Modal from './Modal';
 import '../styles/App.css';
 import {
   PLAYER_COLORS,
-  INITIAL_KNIGHT_POSITIONS,
   SPECIAL_ZONE_SQUARES,
   ZONES_DEFINITION_FOR_MAJORITY
 } from '../constants';
@@ -14,12 +13,33 @@ import { getBestMove } from '../gameLogic/minimax';
 
 const createInitialBoard = () => Array(8).fill(null).map(() => Array(8).fill(null));
 
+// Función para generar posiciones aleatorias válidas
+const generateRandomPositions = () => {
+  const getRandomPosition = () => ({
+    r: Math.floor(Math.random() * 8),
+    c: Math.floor(Math.random() * 8)
+  });
+
+  let greenPos, redPos;
+  
+  // Generar posiciones hasta que no estén en la misma casilla
+  do {
+    greenPos = getRandomPosition();
+    redPos = getRandomPosition();
+  } while (greenPos.r === redPos.r && greenPos.c === redPos.c);
+
+  return {
+    [PLAYER_COLORS.GREEN]: greenPos,
+    [PLAYER_COLORS.RED]: redPos
+  };
+};
+
 function App() {
   const [gameStarted, setGameStarted] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [gameMode, setGameMode] = useState('friend'); // 'friend' o 'ai'
   const [difficulty, setDifficulty] = useState(null); // 'beginner', 'amateur', 'expert'
-  const [knights, setKnights] = useState(JSON.parse(JSON.stringify(INITIAL_KNIGHT_POSITIONS))); // Deep copy
+  const [knights, setKnights] = useState(generateRandomPositions()); // Posiciones aleatorias desde el inicio
   const [currentPlayer, setCurrentPlayer] = useState(PLAYER_COLORS.GREEN);
   const [selectedKnightPos, setSelectedKnightPos] = useState(null); // { r, c }
   const [possibleMoves, setPossibleMoves] = useState([]);
@@ -33,7 +53,8 @@ function App() {
   const [isAIThinking, setIsAIThinking] = useState(false);
 
   const resetGame = () => {
-    setKnights(JSON.parse(JSON.stringify(INITIAL_KNIGHT_POSITIONS)));
+    // Generar nuevas posiciones aleatorias para cada partida
+    setKnights(generateRandomPositions());
     setCurrentPlayer(PLAYER_COLORS.GREEN);
     setSelectedKnightPos(null);
     setPossibleMoves([]);

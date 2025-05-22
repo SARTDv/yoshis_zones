@@ -21,17 +21,17 @@ function Modal({ onStartGame, onClose, isInGame = false }) {
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content">
         <div className="modal-header">
+          {isInGame && (
+            <button className="close-button" onClick={onClose}>
+              ×
+            </button>
+          )}
           <img 
             src="/images/logo.png" 
             alt="Yoshi's Zones Logo" 
             className="modal-logo"
           />
           <h2>Yoshi's Zones</h2>
-          {isInGame && (
-            <button className="close-button" onClick={onClose}>
-              ×
-            </button>
-          )}
         </div>
         
         <p>Elige tu modo de juego:</p>
