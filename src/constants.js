@@ -60,7 +60,10 @@ const getRandomPositionOutsideZones = (excludedSquares) => {
 };
 
 // Posiciones iniciales aleatorias
-export const INITIAL_KNIGHT_POSITIONS = {
-  [PLAYER_COLORS.GREEN]: getRandomPositionOutsideZones(SPECIAL_ZONE_SQUARES),
-  [PLAYER_COLORS.RED]: getRandomPositionOutsideZones(SPECIAL_ZONE_SQUARES),
+export const getInitialKnightPositions = () => {
+  return {
+    [PLAYER_COLORS.GREEN]: getRandomPositionOutsideZones(SPECIAL_ZONE_SQUARES),
+    [PLAYER_COLORS.RED]: getRandomPositionOutsideZones(SPECIAL_ZONE_SQUARES),
+  };
 };
+

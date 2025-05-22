@@ -6,40 +6,43 @@ import '../styles/App.css';
 import {
   PLAYER_COLORS,
   SPECIAL_ZONE_SQUARES,
-  ZONES_DEFINITION_FOR_MAJORITY
+  ZONES_DEFINITION_FOR_MAJORITY,
+  getInitialKnightPositions,
 } from '../constants';
 import { getPossibleKnightMoves } from '../gameLogic/knightMoves';
-import { getBestMove } from '../gameLogic/minimax';
+import api from '../api/axiosInstance';
 
-const createInitialBoard = () => Array(8).fill(null).map(() => Array(8).fill(null));
+const encodeBoardState = (knights, capturedSpecialSquares) => {
+  const board = Array(8).fill(null).map(() => Array(8).fill(0));
 
-// Función para generar posiciones aleatorias válidas
-const generateRandomPositions = () => {
-  const getRandomPosition = () => ({
-    r: Math.floor(Math.random() * 8),
-    c: Math.floor(Math.random() * 8)
+  // Marcar zonas especiales
+  SPECIAL_ZONE_SQUARES.forEach(squareKey => {
+    const [r, c] = squareKey.split('-').map(Number);
+    if (capturedSpecialSquares[squareKey] === PLAYER_COLORS.GREEN) {
+      board[r][c] = 4;
+    } else if (capturedSpecialSquares[squareKey] === PLAYER_COLORS.RED) {
+      board[r][c] = 5;
+    } else {
+      board[r][c] = 3;
+    }
   });
 
-  let greenPos, redPos;
-  
-  // Generar posiciones hasta que no estén en la misma casilla
-  do {
-    greenPos = getRandomPosition();
-    redPos = getRandomPosition();
-  } while (greenPos.r === redPos.r && greenPos.c === redPos.c);
+  // Marcar caballos
+  const green = knights[PLAYER_COLORS.GREEN];
+  const red = knights[PLAYER_COLORS.RED];
+  board[green.r][green.c] = 1;
+  board[red.r][red.c] = 2;
 
-  return {
-    [PLAYER_COLORS.GREEN]: greenPos,
-    [PLAYER_COLORS.RED]: redPos
-  };
+  return board;
 };
+
 
 function App() {
   const [gameStarted, setGameStarted] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [gameMode, setGameMode] = useState('friend'); // 'friend' o 'ai'
   const [difficulty, setDifficulty] = useState(null); // 'beginner', 'amateur', 'expert'
-  const [knights, setKnights] = useState(generateRandomPositions()); // Posiciones aleatorias desde el inicio
+  const [knights, setKnights] = useState(getInitialKnightPositions()); // Posiciones aleatorias desde el inicio
   const [currentPlayer, setCurrentPlayer] = useState(PLAYER_COLORS.GREEN);
   const [selectedKnightPos, setSelectedKnightPos] = useState(null); // { r, c }
   const [possibleMoves, setPossibleMoves] = useState([]);
@@ -54,7 +57,7 @@ function App() {
 
   const resetGame = () => {
     // Generar nuevas posiciones aleatorias para cada partida
-    setKnights(generateRandomPositions());
+    setKnights(getInitialKnightPositions());
     setCurrentPlayer(PLAYER_COLORS.GREEN);
     setSelectedKnightPos(null);
     setPossibleMoves([]);
@@ -93,42 +96,73 @@ function App() {
     }
   }, [capturedSpecialSquares, scores]);
 
+  //Funcion para llamar al back que maneja ia
+  const fetchAIMove = async () => {
+    const boardMatrix = encodeBoardState(knights, capturedSpecialSquares);
+    const difficultyMap = {
+        'beginner': 2,
+        'amateur': 4,
+        'expert': 6
+    };
+    
+    // Obtener el valor numérico de la dificultad (default 2 si difficulty es null)
+    const difficultyLevel = difficulty ? difficultyMap[difficulty.toLowerCase()] || 2 : 2;
+    
+    try {
+      const response = await api.post('/api/matriz', {
+        matriz: boardMatrix,
+        dificultad: difficultyLevel
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching AI move:', error);
+      throw error;
+    }
+  };
+
+
   // Efecto para manejar el turno de la IA
   useEffect(() => {
     if (gameStarted && gameMode === 'ai' && currentPlayer === PLAYER_COLORS.GREEN && !winner) {
-      // La IA juega con el Yoshi verde
       setIsAIThinking(true);
       
-      // Pequeño retraso para dar sensación de "pensamiento"
-      const aiMoveTimeout = setTimeout(() => {
-        const bestMove = getBestMove(knights, currentPlayer, capturedSpecialSquares, difficulty);
-        
-        if (bestMove) {
-          // Mover el caballo de la IA
-          const newKnights = { ...knights };
-          newKnights[currentPlayer] = { r: bestMove.r, c: bestMove.c };
-          setKnights(newKnights);
+      const executeAIMove = async () => {
+        try {
+          // Pequeño retraso para dar sensación de "pensamiento"
+          await new Promise(resolve => setTimeout(resolve, 700));
           
-          // Capturar casilla especial si aplica
-          const squareKey = `${bestMove.r}-${bestMove.c}`;
-          let newCaptured = { ...capturedSpecialSquares };
-          let newScores = { ...scores };
+          const bestMove = await fetchAIMove();
           
-          if (SPECIAL_ZONE_SQUARES.has(squareKey) && !newCaptured[squareKey]) {
-            newCaptured[squareKey] = currentPlayer;
-            newScores[currentPlayer]++;
-            setCapturedSpecialSquares(newCaptured);
-            setScores(newScores);
-            checkZoneConquest(newCaptured);
+          if (bestMove) {
+            // Mover el caballo de la IA
+            const newKnights = { ...knights };
+            newKnights[currentPlayer] = { r: bestMove.r, c: bestMove.c };
+            setKnights(newKnights);
+            
+            // Capturar casilla especial si aplica
+            const squareKey = `${bestMove.r}-${bestMove.c}`;
+            let newCaptured = { ...capturedSpecialSquares };
+            let newScores = { ...scores };
+            
+            if (SPECIAL_ZONE_SQUARES.has(squareKey) && !newCaptured[squareKey]) {
+              newCaptured[squareKey] = currentPlayer;
+              newScores[currentPlayer]++;
+              setCapturedSpecialSquares(newCaptured);
+              setScores(newScores);
+              checkZoneConquest(newCaptured);
+            }
+            
+            // Cambiar turno al jugador humano
+            setCurrentPlayer(PLAYER_COLORS.RED);
           }
-          
-          // Cambiar turno al jugador humano
-          setCurrentPlayer(PLAYER_COLORS.RED);
+        } catch (error) {
+          console.error('Error executing AI move:', error);
+        } finally {
           setIsAIThinking(false);
         }
-      }, 700); // Retraso de 700ms para simular "pensamiento" de la IA
+      };
       
-      return () => clearTimeout(aiMoveTimeout);
+      executeAIMove();
     }
   }, [gameStarted, gameMode, currentPlayer, knights, capturedSpecialSquares, difficulty, winner]);
 
@@ -247,13 +281,7 @@ function App() {
           {winner === 'TIE' ? '¡Es un Empate!' : `¡Ganador: ${winner === PLAYER_COLORS.GREEN ? 'Verde' : 'Rojo'}!`}
           <button onClick={resetGame}>Jugar de Nuevo</button>
         </div>
-      )}
-      
-      {isAIThinking && (
-        <div className="ai-thinking">
-          La IA está pensando...
-        </div>
-      )}
+      )}      
       
       <Board
         knights={knights}
@@ -280,6 +308,13 @@ function App() {
           onClose={handleCloseModal}
           isInGame={true}
         />
+      )}
+
+      {/*NO ME GUSTA QUE EMPUJE AL TABLERO */}
+      {isAIThinking && (
+        <div className="ai-thinking">
+          La IA está pensando...
+        </div>
       )}
     </div>
   );
