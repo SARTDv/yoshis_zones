@@ -1,23 +1,56 @@
 import React from 'react';
 import '../styles/Modal.css';
 
-function Modal({ onStartGame }) {
-  // Todas las opciones inician el modo "amigo" por ahora
-  const handleSelection = () => {
-    onStartGame('friend', null); // 'friend' es el modo, null para dificultad
+function Modal({ onStartGame, onClose, isInGame = false }) {
+  const handleFriendSelection = () => {
+    onStartGame('friend', null);
+  };
+
+  const handleAISelection = (difficulty) => {
+    onStartGame('ai', difficulty);
+  };
+
+  const handleOverlayClick = (e) => {
+    // Solo cerrar si se hace clic en el overlay, no en el contenido del modal
+    if (e.target === e.currentTarget && isInGame) {
+      onClose();
+    }
   };
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content">
-        <h2>Duelo de Corceles</h2>
+        <div className="modal-header">
+          {isInGame && (
+            <button className="close-button" onClick={onClose}>
+              ×
+            </button>
+          )}
+          <img 
+            src="/images/logo.png" 
+            alt="Yoshi's Zones Logo" 
+            className="modal-logo"
+          />
+          <h2>Yoshi's Zones</h2>
+        </div>
+        
         <p>Elige tu modo de juego:</p>
-        <button onClick={handleSelection}>Jugar con un Amigo</button>
+        
+        <button onClick={handleFriendSelection}>
+          👥 Jugar con un Amigo
+        </button>
+        
         <div className="ai-options">
-          <p>Jugar contra IA (Demo: inicia juego de amigos):</p>
-          <button onClick={handleSelection}>Principiante</button>
-          <button onClick={handleSelection}>Amateur</button>
-          <button onClick={handleSelection}>Experto</button>
+          <p>🤖 Jugar contra IA:</p>
+          <button onClick={() => handleAISelection('beginner')}>
+            Principiante
+          </button>
+          <button onClick={() => handleAISelection('amateur')}>
+            Amateur
+          </button>
+          <button onClick={() => handleAISelection('expert')}>
+            Experto
+          </button>
         </div>
       </div>
     </div>

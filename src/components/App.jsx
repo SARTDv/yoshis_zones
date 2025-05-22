@@ -5,17 +5,41 @@ import Modal from './Modal';
 import '../styles/App.css';
 import {
   PLAYER_COLORS,
-  INITIAL_KNIGHT_POSITIONS,
   SPECIAL_ZONE_SQUARES,
   ZONES_DEFINITION_FOR_MAJORITY
 } from '../constants';
 import { getPossibleKnightMoves } from '../gameLogic/knightMoves';
+import { getBestMove } from '../gameLogic/minimax';
 
 const createInitialBoard = () => Array(8).fill(null).map(() => Array(8).fill(null));
 
+// Función para generar posiciones aleatorias válidas
+const generateRandomPositions = () => {
+  const getRandomPosition = () => ({
+    r: Math.floor(Math.random() * 8),
+    c: Math.floor(Math.random() * 8)
+  });
+
+  let greenPos, redPos;
+  
+  // Generar posiciones hasta que no estén en la misma casilla
+  do {
+    greenPos = getRandomPosition();
+    redPos = getRandomPosition();
+  } while (greenPos.r === redPos.r && greenPos.c === redPos.c);
+
+  return {
+    [PLAYER_COLORS.GREEN]: greenPos,
+    [PLAYER_COLORS.RED]: redPos
+  };
+};
+
 function App() {
   const [gameStarted, setGameStarted] = useState(false);
-  const [knights, setKnights] = useState(JSON.parse(JSON.stringify(INITIAL_KNIGHT_POSITIONS))); // Deep copy
+  const [showModal, setShowModal] = useState(false);
+  const [gameMode, setGameMode] = useState('friend'); // 'friend' o 'ai'
+  const [difficulty, setDifficulty] = useState(null); // 'beginner', 'amateur', 'expert'
+  const [knights, setKnights] = useState(generateRandomPositions()); // Posiciones aleatorias desde el inicio
   const [currentPlayer, setCurrentPlayer] = useState(PLAYER_COLORS.GREEN);
   const [selectedKnightPos, setSelectedKnightPos] = useState(null); // { r, c }
   const [possibleMoves, setPossibleMoves] = useState([]);
@@ -26,9 +50,11 @@ function App() {
     [PLAYER_COLORS.RED]: new Set()
   });
   const [winner, setWinner] = useState(null);
+  const [isAIThinking, setIsAIThinking] = useState(false);
 
   const resetGame = () => {
-    setKnights(JSON.parse(JSON.stringify(INITIAL_KNIGHT_POSITIONS)));
+    // Generar nuevas posiciones aleatorias para cada partida
+    setKnights(generateRandomPositions());
     setCurrentPlayer(PLAYER_COLORS.GREEN);
     setSelectedKnightPos(null);
     setPossibleMoves([]);
@@ -37,10 +63,21 @@ function App() {
     setConqueredZones({ [PLAYER_COLORS.GREEN]: new Set(), [PLAYER_COLORS.RED]: new Set() });
     setWinner(null);
     setGameStarted(true);
+    setShowModal(false);
   };
 
-  const handleStartGame = (mode, difficulty) => {
+  const handleStartGame = (mode, aiDifficulty) => {
+    setGameMode(mode);
+    setDifficulty(aiDifficulty);
     resetGame();
+  };
+
+  const handleShowModal = () => {
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
   };
 
   useEffect(() => {
@@ -56,9 +93,50 @@ function App() {
     }
   }, [capturedSpecialSquares, scores]);
 
+  // Efecto para manejar el turno de la IA
+  useEffect(() => {
+    if (gameStarted && gameMode === 'ai' && currentPlayer === PLAYER_COLORS.GREEN && !winner) {
+      // La IA juega con el Yoshi verde
+      setIsAIThinking(true);
+      
+      // Pequeño retraso para dar sensación de "pensamiento"
+      const aiMoveTimeout = setTimeout(() => {
+        const bestMove = getBestMove(knights, currentPlayer, capturedSpecialSquares, difficulty);
+        
+        if (bestMove) {
+          // Mover el caballo de la IA
+          const newKnights = { ...knights };
+          newKnights[currentPlayer] = { r: bestMove.r, c: bestMove.c };
+          setKnights(newKnights);
+          
+          // Capturar casilla especial si aplica
+          const squareKey = `${bestMove.r}-${bestMove.c}`;
+          let newCaptured = { ...capturedSpecialSquares };
+          let newScores = { ...scores };
+          
+          if (SPECIAL_ZONE_SQUARES.has(squareKey) && !newCaptured[squareKey]) {
+            newCaptured[squareKey] = currentPlayer;
+            newScores[currentPlayer]++;
+            setCapturedSpecialSquares(newCaptured);
+            setScores(newScores);
+            checkZoneConquest(newCaptured);
+          }
+          
+          // Cambiar turno al jugador humano
+          setCurrentPlayer(PLAYER_COLORS.RED);
+          setIsAIThinking(false);
+        }
+      }, 700); // Retraso de 700ms para simular "pensamiento" de la IA
+      
+      return () => clearTimeout(aiMoveTimeout);
+    }
+  }, [gameStarted, gameMode, currentPlayer, knights, capturedSpecialSquares, difficulty, winner]);
 
   const handleSquareClick = (r, c) => {
-    if (winner) return;
+    if (winner || isAIThinking) return;
+    
+    // En modo IA, el jugador humano solo controla el Yoshi rojo
+    if (gameMode === 'ai' && currentPlayer === PLAYER_COLORS.GREEN) return;
 
     const clickedKnightColor = Object.keys(knights).find(
       color => knights[color].r === r && knights[color].c === c
@@ -142,13 +220,18 @@ function App() {
     }
   };
 
-
   if (!gameStarted) {
     return <Modal onStartGame={handleStartGame} />;
   }
 
   return (
     <div className="app-container">
+      <div className="header-controls">
+        <button className="settings-button" onClick={handleShowModal}>
+          ⚙️ Configuración
+        </button>
+      </div>
+      
       <Scoreboard
         scores={scores}
         currentPlayer={currentPlayer}
@@ -156,13 +239,22 @@ function App() {
             [PLAYER_COLORS.GREEN]: conqueredZones[PLAYER_COLORS.GREEN].size,
             [PLAYER_COLORS.RED]: conqueredZones[PLAYER_COLORS.RED].size
         }}
+        gameMode={gameMode}
       />
+      
       {winner && (
         <div className="winner-message">
-          {winner === 'TIE' ? '¡Es un Empate!' : `¡Ganador: ${winner}!`}
+          {winner === 'TIE' ? '¡Es un Empate!' : `¡Ganador: ${winner === PLAYER_COLORS.GREEN ? 'Verde' : 'Rojo'}!`}
           <button onClick={resetGame}>Jugar de Nuevo</button>
         </div>
       )}
+      
+      {isAIThinking && (
+        <div className="ai-thinking">
+          La IA está pensando...
+        </div>
+      )}
+      
       <Board
         knights={knights}
         selectedKnightPos={selectedKnightPos}
@@ -171,9 +263,24 @@ function App() {
         capturedSpecialSquares={capturedSpecialSquares}
         conqueredZones={conqueredZones}
       />
-       <div className="turn-indicator">
-        Turno de: <span style={{ color: currentPlayer === PLAYER_COLORS.GREEN ? PLAYER_COLORS.GREEN : PLAYER_COLORS.RED, fontWeight: 'bold' }}>{currentPlayer}</span>
+      
+      <div className="turn-indicator">
+        Turno de: <span style={{ 
+          color: currentPlayer === PLAYER_COLORS.GREEN ? PLAYER_COLORS.GREEN : PLAYER_COLORS.RED, 
+          fontWeight: 'bold' 
+        }}>
+          {currentPlayer === PLAYER_COLORS.GREEN ? 'Verde' : 'Rojo'}
+          {gameMode === 'ai' && ` (${currentPlayer === PLAYER_COLORS.GREEN ? 'IA' : 'Humano'})`}
+        </span>
       </div>
+
+      {showModal && (
+        <Modal 
+          onStartGame={handleStartGame} 
+          onClose={handleCloseModal}
+          isInGame={true}
+        />
+      )}
     </div>
   );
 }

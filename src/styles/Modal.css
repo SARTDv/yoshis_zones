@@ -1,69 +1,175 @@
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 30px 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  width: 90%;
+  max-width: 450px;
+  position: relative;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
   }
-  
-  .modal-content {
-    background-color: #fff;
-    padding: 30px 40px;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    text-align: center;
-    width: 90%;
-    max-width: 450px;
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
-  
-  .modal-content h2 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #333;
-  }
-  
-  .modal-content p {
-    margin-bottom: 20px;
-    color: #555;
-  }
-  
-  .modal-content button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 6px;
-    font-size: 1em;
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
-    display: block;
-    width: 100%;
-    margin-bottom: 10px;
-  }
-  
-  .modal-content button:hover {
-    background-color: #0056b3;
-  }
-  
-  .ai-options {
-    margin-top: 25px;
-    border-top: 1px solid #eee;
-    padding-top: 20px;
-  }
-  
-  .ai-options p {
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-  
-  .ai-options button {
-    background-color: #6c757d; /* Un color diferente para IA */
-  }
-  .ai-options button:hover {
-    background-color: #545b62;
-  }
+}
+
+.modal-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.modal-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 10px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modal-content .close-button {
+  position: absolute;
+  top: -8px;       
+  right: -8px;     
+  background-color: #dc3545 !important; 
+  color: white !important;
+  border: none;
+  width: 20px;     
+  height: 20px;    
+  border-radius: 50%; 
+  font-size: 12px; 
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(220, 53, 69, 0.4);
+  line-height: 1;
+  font-weight: bold;
+  z-index: 1001; 
+  margin-bottom: 0 !important; 
+  padding: 0 !important; 
+}
+
+.modal-content .close-button:hover {
+  background-color: #c82333 !important;
+  transform: scale(1.05); 
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.6);
+}
+
+.modal-content .close-button:active {
+  transform: scale(0.95);
+}
+
+.modal-content h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.8em;
+  font-weight: 600;
+}
+
+.modal-content p {
+  margin-bottom: 20px;
+  color: #555;
+  font-size: 1.1em;
+}
+
+.modal-content button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 14px 25px;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.modal-content button:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.modal-content button:active {
+  transform: translateY(0);
+}
+
+.ai-options {
+  margin-top: 25px;
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+}
+
+.ai-options p {
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.ai-options button {
+  background-color: #6c757d;
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
+}
+
+.ai-options button:hover {
+  background-color: #545b62;
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* Colores específicos para cada dificultad */
+.ai-options button:nth-child(2) {
+  background-color: #28a745; 
+}
+
+.ai-options button:nth-child(2):hover {
+  background-color: #218838;
+}
+
+.ai-options button:nth-child(3) {
+  background-color: #ffc107; 
+  color: #333;
+}
+
+.ai-options button:nth-child(3):hover {
+  background-color: #e0a800;
+}
+
+.ai-options button:nth-child(4) {
+  background-color: #dc3545; 
+}
+
+.ai-options button:nth-child(4):hover {
+  background-color: #c82333;
+}
