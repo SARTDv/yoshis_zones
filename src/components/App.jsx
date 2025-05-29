@@ -84,17 +84,17 @@ function App() {
   };
 
   useEffect(() => {
-    // Comprobar ganador si todas las casillas especiales están capturadas
-    if (Object.keys(capturedSpecialSquares).length === SPECIAL_ZONE_SQUARES.size) {
-        if (scores[PLAYER_COLORS.GREEN] > scores[PLAYER_COLORS.RED]) {
-            setWinner(PLAYER_COLORS.GREEN);
-        } else if (scores[PLAYER_COLORS.RED] > scores[PLAYER_COLORS.GREEN]) {
-            setWinner(PLAYER_COLORS.RED);
-        } else {
-            setWinner('TIE'); // Empate
-        }
+    const greenZones = conqueredZones[PLAYER_COLORS.GREEN].size;
+    const redZones = conqueredZones[PLAYER_COLORS.RED].size;
+
+    if ((greenZones + redZones) >= 4) {
+      setWinner(
+        greenZones > redZones ? PLAYER_COLORS.GREEN :
+        redZones > greenZones ? PLAYER_COLORS.RED :
+        'TIE'
+      );
     }
-  }, [capturedSpecialSquares, scores]);
+  }, [conqueredZones]);
 
   //Funcion para llamar al back que maneja ia
   const fetchAIMove = async () => {
@@ -134,34 +134,26 @@ function App() {
           const bestMove = await fetchAIMove();
           
           if (bestMove) {
-            // Si la API ya declara un ganador, reflejarlo en el frontend
-            if (bestMove.ganador) {
-              if (bestMove.ganador === 'verde') setWinner(PLAYER_COLORS.GREEN);
-              else if (bestMove.ganador === 'rojo') setWinner(PLAYER_COLORS.RED);
-              else if (bestMove.ganador === 'empate') setWinner('TIE');
+            // Mover el caballo de la IA
+            const newKnights = { ...knights };
+            newKnights[currentPlayer] = { r: bestMove.r, c: bestMove.c };
+            setKnights(newKnights);
+            
+            // Capturar casilla especial si aplica
+            const squareKey = `${bestMove.r}-${bestMove.c}`;
+            let newCaptured = { ...capturedSpecialSquares };
+            let newScores = { ...scores };
+            
+            if (SPECIAL_ZONE_SQUARES.has(squareKey) && !newCaptured[squareKey]) {
+              newCaptured[squareKey] = currentPlayer;
+              newScores[currentPlayer]++;
+              setCapturedSpecialSquares(newCaptured);
+              setScores(newScores);
+              checkZoneConquest(newCaptured);
             }
-            // Si no hay ganador, continuar el flujo normal
-            if (!bestMove.ganador) {
-              // Mover el caballo de la IA
-              const newKnights = { ...knights };
-              newKnights[currentPlayer] = { r: bestMove.r, c: bestMove.c };
-              setKnights(newKnights);
-              
-              // Capturar casilla especial si aplica
-              const squareKey = `${bestMove.r}-${bestMove.c}`;
-              let newCaptured = { ...capturedSpecialSquares };
-              let newScores = { ...scores };
-              
-              if (SPECIAL_ZONE_SQUARES.has(squareKey) && !newCaptured[squareKey]) {
-                newCaptured[squareKey] = currentPlayer;
-                newScores[currentPlayer]++;
-                setCapturedSpecialSquares(newCaptured);
-                setScores(newScores);
-                checkZoneConquest(newCaptured);
-              }
-              // Cambiar turno al jugador humano
-              setCurrentPlayer(PLAYER_COLORS.RED);
-            }
+            
+            // Cambiar turno al jugador humano
+            setCurrentPlayer(PLAYER_COLORS.RED);
           }
         } catch (error) {
           console.error('Error executing AI move:', error);
@@ -174,8 +166,9 @@ function App() {
     }
   }, [gameStarted, gameMode, currentPlayer, knights, capturedSpecialSquares, difficulty, winner]);
 
-  const handleSquareClick = async (r, c) => {
+  const handleSquareClick = (r, c) => {
     if (winner || isAIThinking) return;
+    
     // En modo IA, el jugador humano solo controla el Yoshi rojo
     if (gameMode === 'ai' && currentPlayer === PLAYER_COLORS.GREEN) return;
 
@@ -189,42 +182,25 @@ function App() {
         // Mover el caballo
         const newKnights = { ...knights };
         newKnights[currentPlayer] = { r, c };
+        setKnights(newKnights);
+
         // Capturar casilla especial si aplica
         const squareKey = `${r}-${c}`;
         let newCaptured = { ...capturedSpecialSquares };
         let newScores = { ...scores };
+
         if (SPECIAL_ZONE_SQUARES.has(squareKey) && !newCaptured[squareKey]) {
           newCaptured[squareKey] = currentPlayer;
           newScores[currentPlayer]++;
+          setCapturedSpecialSquares(newCaptured);
+          setScores(newScores);
+          checkZoneConquest(newCaptured);
         }
-        // Simular el nuevo tablero para consultar ganador
-        const boardMatrix = encodeBoardState(newKnights, newCaptured);
-        // Lógica de victoria local (jugador vs jugador)
-        let winnerFromApi = null;
-        try {
-          const response = await api.post('/api/matriz', {
-            matriz: boardMatrix,
-            dificultad: 2 // dificultad dummy, no importa para PvP
-          });
-          if (response.data.ganador) {
-            if (response.data.ganador === 'verde') winnerFromApi = PLAYER_COLORS.GREEN;
-            else if (response.data.ganador === 'rojo') winnerFromApi = PLAYER_COLORS.RED;
-            else if (response.data.ganador === 'empate') winnerFromApi = 'TIE';
-          }
-        } catch (e) {
-          // Si la API falla, no bloquea el flujo
-        }
-        setKnights(newKnights);
-        setCapturedSpecialSquares(newCaptured);
-        setScores(newScores);
-        checkZoneConquest(newCaptured);
+
+        // Cambiar turno y limpiar selección
         setSelectedKnightPos(null);
         setPossibleMoves([]);
-        if (winnerFromApi) {
-          setWinner(winnerFromApi);
-        } else {
-          setCurrentPlayer(currentPlayer === PLAYER_COLORS.GREEN ? PLAYER_COLORS.RED : PLAYER_COLORS.GREEN);
-        }
+        setCurrentPlayer(currentPlayer === PLAYER_COLORS.GREEN ? PLAYER_COLORS.RED : PLAYER_COLORS.GREEN);
       } else if (clickedKnightColor === currentPlayer) {
         // Si hace clic en su propio caballo de nuevo, lo selecciona
         const currentKnightPos = knights[currentPlayer];
