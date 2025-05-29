@@ -8,7 +8,7 @@ export const PLAYER_COLORS = {
 export const PLAYER_HEX_COLORS = {
   [PLAYER_COLORS.GREEN]: '#2ECC71',
   [PLAYER_COLORS.RED]: '#E74C3C',
-  HIGHLIGHT: 'rgba(135, 206, 235, 0.6)',
+  HIGHLIGHT: 'rgba(135, 206, 235, 0.7)',
   SPECIAL_ZONE_BORDER: 'rgba(255, 215, 0, 0.4)',
 };
 
