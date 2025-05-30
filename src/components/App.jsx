@@ -87,6 +87,14 @@ function App() {
     const greenZones = conqueredZones[PLAYER_COLORS.GREEN].size;
     const redZones = conqueredZones[PLAYER_COLORS.RED].size;
 
+    if (greenZones >= 3 || redZones >= 3) {
+      setWinner(
+        greenZones > redZones ? PLAYER_COLORS.GREEN :
+        redZones > greenZones ? PLAYER_COLORS.RED :
+        'TIE'
+      );
+    }
+
     if ((greenZones + redZones) >= 4) {
       setWinner(
         greenZones > redZones ? PLAYER_COLORS.GREEN :
@@ -123,27 +131,39 @@ function App() {
 
   // Efecto para manejar el turno de la IA
   useEffect(() => {
-    if (gameStarted && gameMode === 'ai' && currentPlayer === PLAYER_COLORS.GREEN && !winner) {
+    if (
+      gameStarted &&
+      gameMode === 'ai' &&
+      currentPlayer === PLAYER_COLORS.GREEN &&
+      !winner
+    ) {
       setIsAIThinking(true);
-      
+
       const executeAIMove = async () => {
         try {
-          // Pequeño retraso para dar sensación de "pensamiento"
-          await new Promise(resolve => setTimeout(resolve, 700));
-          
+          const startTime = Date.now();
+
           const bestMove = await fetchAIMove();
-          
+
+          const elapsed = Date.now() - startTime;
+          const delay = Math.max(700 - elapsed, 0);
+          if (delay > 0) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+
           if (bestMove) {
             // Mover el caballo de la IA
-            const newKnights = { ...knights };
-            newKnights[currentPlayer] = { r: bestMove.r, c: bestMove.c };
+            const newKnights = {
+              ...knights,
+              [currentPlayer]: { r: bestMove.r, c: bestMove.c }
+            };
             setKnights(newKnights);
-            
+
             // Capturar casilla especial si aplica
             const squareKey = `${bestMove.r}-${bestMove.c}`;
             let newCaptured = { ...capturedSpecialSquares };
             let newScores = { ...scores };
-            
+
             if (SPECIAL_ZONE_SQUARES.has(squareKey) && !newCaptured[squareKey]) {
               newCaptured[squareKey] = currentPlayer;
               newScores[currentPlayer]++;
@@ -151,7 +171,7 @@ function App() {
               setScores(newScores);
               checkZoneConquest(newCaptured);
             }
-            
+
             // Cambiar turno al jugador humano
             setCurrentPlayer(PLAYER_COLORS.RED);
           }
@@ -161,10 +181,13 @@ function App() {
           setIsAIThinking(false);
         }
       };
-      
+
       executeAIMove();
     }
-  }, [gameStarted, gameMode, currentPlayer, knights, capturedSpecialSquares, difficulty, winner]);
+  }, [
+    gameStarted,gameMode,currentPlayer,knights,capturedSpecialSquares,difficulty
+  ]);
+
 
   const handleSquareClick = (r, c) => {
     if (winner || isAIThinking) return;
